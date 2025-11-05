@@ -214,20 +214,8 @@ def handler(job: Dict[str, Any]) -> Dict[str, Any]:
             'api_key': '189877928833532',
             'api_secret': 'DYZR0Y-1MH9EO6DkjiojyQPaN8c'
         }
-        
-        # Retry upload up to 3 times
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                output_url = upload_to_cloudinary(str(output_path), cloudinary_config)
-                print(f"✅ Uploaded to Cloudinary: {output_url}")
-                break
-            except Exception as upload_error:
-                if attempt < max_retries - 1:
-                    print(f"⚠️  Upload attempt {attempt + 1} failed, retrying...")
-                    time.sleep(2)
-                else:
-                    raise Exception(f"Cloudinary upload failed after {max_retries} attempts: {str(upload_error)}")
+        output_url = upload_to_cloudinary(str(output_path), cloudinary_config)
+        print(f"✅ Uploaded to Cloudinary: {output_url}")
         
         # Calculate duration
         duration = int(time.time() - start_time)
