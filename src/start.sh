@@ -546,13 +546,13 @@ nohup python3 "$NETWORK_VOLUME/ComfyUI/main.py" --listen --use-sage-attention > 
     # Only show success message if curl succeeded
     if curl --silent --fail "$URL" --output /dev/null; then
         echo "🚀 ComfyUI is UP"
+        
+        # Start RunPod handler in background if it exists (serverless mode)
+        if [ -f "/rp_handler.py" ]; then
+            echo "🎯 Starting RunPod Serverless handler..."
+            python3 /rp_handler.py &
+        fi
     fi
 
-    # Check if we should run in serverless mode
-    if [ -f "/rp_handler.py" ]; then
-        echo "🎯 Starting RunPod Serverless handler..."
-        python3 /rp_handler.py
-    else
-        sleep infinity
-    fi
+    sleep infinity
 fi
