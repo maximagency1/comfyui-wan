@@ -113,9 +113,10 @@ RUN wget -q https://huggingface.co/Kijai/vitpose_comfy/resolve/main/onnx/vitpose
 RUN wget -q https://huggingface.co/Kijai/vitpose_comfy/resolve/main/onnx/vitpose_h_wholebody_data.bin -O /ComfyUI/models/detection/vitpose_h_wholebody_data.bin
 
 COPY src/start_script.sh /start_script.sh
-COPY src/entrypoint.sh /entrypoint.sh
-RUN chmod +x /start_script.sh /entrypoint.sh
-COPY src/rp_handler.py /rp_handler.py
+RUN chmod +x /start_script.sh
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+COPY handler.py /handler.py
 COPY 4xLSDIR.pth /4xLSDIR.pth
 
 # Default: regular pod mode (start_script.sh)

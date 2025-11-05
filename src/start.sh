@@ -548,9 +548,9 @@ nohup python3 "$NETWORK_VOLUME/ComfyUI/main.py" --listen --use-sage-attention > 
         echo "🚀 ComfyUI is UP"
         
         # Start RunPod handler in background if it exists (serverless mode)
-        if [ -f "/rp_handler.py" ]; then
+        if [ -f "/handler.py" ]; then
             echo "🎯 Starting RunPod Serverless handler..."
-            python3 /rp_handler.py &
+            python3 /handler.py &
         fi
     fi
 

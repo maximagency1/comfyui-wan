@@ -29,4 +29,4 @@ fi
 
 # Start the handler in the foreground (becomes main process)
 echo "🎯 Starting RunPod Serverless handler..."
-exec python3 /rp_handler.py
+exec python3 /handler.py
