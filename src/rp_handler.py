@@ -114,17 +114,12 @@ def handler(job: Dict[str, Any]) -> Dict[str, Any]:
     {
         "image_url": "https://...",
         "video_url": "https://...",  # Optional
-        "workflow": {...},  # ComfyUI workflow JSON
-        "cloudinary": {  # Optional - if you want to upload to Cloudinary
-            "cloud_name": "...",
-            "api_key": "...",
-            "api_secret": "..."
-        }
+        "workflow": {...}  # ComfyUI workflow JSON
     }
     
     Returns:
     {
-        "output_url": "https://...",  # Cloudinary URL or base64 data
+        "output_url": "https://...",  # Cloudinary URL (hardcoded credentials)
         "filename": "...",
         "duration": 123  # Processing time in seconds
     }
@@ -205,18 +200,15 @@ def handler(job: Dict[str, Any]) -> Dict[str, Any]:
         client.download_output(output_filename, str(output_path))
         print(f"✅ Downloaded output ({output_path.stat().st_size} bytes)")
         
-        # Upload to Cloudinary if config provided
-        output_url = None
-        if 'cloudinary' in job_input:
-            print("☁️  Uploading to Cloudinary...")
-            output_url = upload_to_cloudinary(str(output_path), job_input['cloudinary'])
-            print(f"✅ Uploaded to Cloudinary: {output_url}")
-        else:
-            # Return as base64 if no Cloudinary config
-            print("📦 Encoding output as base64...")
-            with open(output_path, 'rb') as f:
-                output_data = base64.b64encode(f.read()).decode('utf-8')
-            output_url = f"data:video/mp4;base64,{output_data}"
+        # Upload to Cloudinary (using hardcoded credentials)
+        print("☁️  Uploading to Cloudinary...")
+        cloudinary_config = {
+            'cloud_name': 'dwt1ebvwe',
+            'api_key': '189877928833532',
+            'api_secret': 'DYZR0Y-1MH9EO6DkjiojyQPaN8c'
+        }
+        output_url = upload_to_cloudinary(str(output_path), cloudinary_config)
+        print(f"✅ Uploaded to Cloudinary: {output_url}")
         
         # Calculate duration
         duration = int(time.time() - start_time)
