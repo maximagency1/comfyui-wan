@@ -97,8 +97,15 @@ RUN for repo in \
         fi; \
     done
 
+# Install RunPod Python SDK for serverless support
+RUN pip install runpod requests cloudinary websocket-client
+
 COPY src/start_script.sh /start_script.sh
-RUN chmod +x /start_script.sh
+COPY src/start_serverless.sh /start_serverless.sh
+RUN chmod +x /start_script.sh /start_serverless.sh
+COPY src/rp_handler.py /rp_handler.py
 COPY 4xLSDIR.pth /4xLSDIR.pth
 
+# Default: regular pod mode
+# For serverless, override with: CMD ["/start_serverless.sh"]
 CMD ["/start_script.sh"]
