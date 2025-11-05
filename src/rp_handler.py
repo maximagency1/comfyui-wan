@@ -12,12 +12,13 @@ import base64
 from pathlib import Path
 from typing import Dict, Any, Optional
 import websocket
+import uuid
 
 # ComfyUI API client
 class ComfyUIClient:
     def __init__(self, server_address="127.0.0.1:8188"):
         self.server_address = server_address
-        self.client_id = str(int(time.time()))
+        self.client_id = str(uuid.uuid4())
         
     def upload_file(self, file_path: str, file_type: str = "input") -> str:
         """Upload a file to ComfyUI and return the filename"""
@@ -62,24 +63,27 @@ class ComfyUIClient:
         history = response.json()
         return history.get(prompt_id)
     
-    def wait_for_completion(self, prompt_id: str, timeout: int = 900) -> str:
-        """Wait for prompt to complete and return output filename"""
-        start_time = time.time()
+    def wait_for_completion_ws(self, ws, prompt_id: str) -> str:
+        """Wait for prompt to complete via websocket and return output filename"""
+        while True:
+            out = ws.recv()
+            if isinstance(out, str):
+                message = json.loads(out)
+                if message['type'] == 'executing':
+                    data = message['data']
+                    if data['node'] is None and data['prompt_id'] == prompt_id:
+                        break
         
-        while time.time() - start_time < timeout:
-            history = self.get_history(prompt_id)
-            
-            if history and 'outputs' in history:
-                # Find the output video
-                for node_id, node_output in history['outputs'].items():
-                    if 'gifs' in node_output:
-                        return node_output['gifs'][0]['filename']
-                    elif 'videos' in node_output:
-                        return node_output['videos'][0]['filename']
-                        
-            time.sleep(2)
+        # Get history to find output
+        history = self.get_history(prompt_id)
+        if history and 'outputs' in history:
+            for node_id, node_output in history['outputs'].items():
+                if 'gifs' in node_output:
+                    return node_output['gifs'][0]['filename']
+                elif 'videos' in node_output:
+                    return node_output['videos'][0]['filename']
         
-        raise TimeoutError(f"Prompt {prompt_id} did not complete within {timeout}s")
+        raise Exception("No output found in history")
     
     def download_output(self, filename: str, output_path: str):
         """Download the output file from ComfyUI"""
@@ -191,14 +195,22 @@ def handler(job: Dict[str, Any]) -> Dict[str, Any]:
                 if uploaded_video:
                     node_data['inputs']['video'] = uploaded_video
         
+        # Connect to websocket
+        print("🔌 Connecting to ComfyUI websocket...")
+        ws_url = f"ws://{client.server_address}/ws?clientId={client.client_id}"
+        ws = websocket.WebSocket()
+        ws.connect(ws_url)
+        print(f"✅ Connected to websocket")
+        
         # Queue the prompt
         print("🎬 Queuing prompt to ComfyUI...")
         prompt_id = client.queue_prompt(workflow)
         print(f"✅ Prompt queued: {prompt_id}")
         
-        # Wait for completion
+        # Wait for completion via websocket
         print("⏳ Waiting for ComfyUI to process...")
-        output_filename = client.wait_for_completion(prompt_id, timeout=900)
+        output_filename = client.wait_for_completion_ws(ws, prompt_id)
+        ws.close()
         print(f"✅ Processing complete: {output_filename}")
         
         # Download output

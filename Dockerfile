@@ -100,12 +100,24 @@ RUN for repo in \
 # Install RunPod Python SDK for serverless support
 RUN pip install runpod requests cloudinary websocket-client
 
+# Pre-download WAN Animate models for serverless (faster cold starts)
+RUN wget -q https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_bf16.safetensors -O /ComfyUI/models/vae/Wan2_1_VAE_bf16.safetensors
+RUN wget -q https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors -O /ComfyUI/models/clip_vision/clip_vision_h.safetensors
+RUN wget -q https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/umt5-xxl-enc-bf16.safetensors -O /ComfyUI/models/text_encoders/umt5-xxl-enc-bf16.safetensors
+RUN wget -q https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/Wan22Animate/Wan2_2-Animate-14B_fp8_e4m3fn_scaled_KJ.safetensors -O /ComfyUI/models/diffusion_models/Wan2_2-Animate-14B_fp8_e4m3fn_scaled_KJ.safetensors
+
+# Pre-download detection models
+RUN mkdir -p /ComfyUI/models/detection
+RUN wget -q https://huggingface.co/Wan-AI/Wan2.2-Animate-14B/resolve/main/process_checkpoint/det/yolov10m.onnx -O /ComfyUI/models/detection/yolov10m.onnx
+RUN wget -q https://huggingface.co/Kijai/vitpose_comfy/resolve/main/onnx/vitpose_h_wholebody_model.onnx -O /ComfyUI/models/detection/vitpose_h_wholebody_model.onnx
+RUN wget -q https://huggingface.co/Kijai/vitpose_comfy/resolve/main/onnx/vitpose_h_wholebody_data.bin -O /ComfyUI/models/detection/vitpose_h_wholebody_data.bin
+
 COPY src/start_script.sh /start_script.sh
-COPY src/start_serverless.sh /start_serverless.sh
-RUN chmod +x /start_script.sh /start_serverless.sh
+COPY src/entrypoint.sh /entrypoint.sh
+RUN chmod +x /start_script.sh /entrypoint.sh
 COPY src/rp_handler.py /rp_handler.py
 COPY 4xLSDIR.pth /4xLSDIR.pth
 
-# Default: regular pod mode
-# For serverless, override with: CMD ["/start_serverless.sh"]
+# Default: regular pod mode (start_script.sh)
+# For serverless: CMD ["/entrypoint.sh"]
 CMD ["/start_script.sh"]
