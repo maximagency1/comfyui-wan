@@ -23,8 +23,15 @@ class ComfyUIClient:
         """Upload a file to ComfyUI and return the filename"""
         url = f"http://{self.server_address}/upload/image"
         
+        # Determine mime type based on file extension
+        filename = os.path.basename(file_path)
+        if filename.lower().endswith(('.mp4', '.avi', '.mov', '.webm')):
+            mime_type = 'video/mp4'
+        else:
+            mime_type = 'image/jpeg'
+        
         with open(file_path, 'rb') as f:
-            files = {'image': (os.path.basename(file_path), f, 'image/jpeg')}
+            files = {'image': (filename, f, mime_type)}
             data = {'type': file_type, 'subfolder': ''}
             response = requests.post(url, files=files, data=data)
             
@@ -207,8 +214,20 @@ def handler(job: Dict[str, Any]) -> Dict[str, Any]:
             'api_key': '189877928833532',
             'api_secret': 'DYZR0Y-1MH9EO6DkjiojyQPaN8c'
         }
-        output_url = upload_to_cloudinary(str(output_path), cloudinary_config)
-        print(f"✅ Uploaded to Cloudinary: {output_url}")
+        
+        # Retry upload up to 3 times
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                output_url = upload_to_cloudinary(str(output_path), cloudinary_config)
+                print(f"✅ Uploaded to Cloudinary: {output_url}")
+                break
+            except Exception as upload_error:
+                if attempt < max_retries - 1:
+                    print(f"⚠️  Upload attempt {attempt + 1} failed, retrying...")
+                    time.sleep(2)
+                else:
+                    raise Exception(f"Cloudinary upload failed after {max_retries} attempts: {str(upload_error)}")
         
         # Calculate duration
         duration = int(time.time() - start_time)
